@@ -55,7 +55,6 @@ class Bot {
         'Content-Type': 'multipart/form-data',
       },
     });
-    const t = await response.text();
 
     const result = await response.json();
     if (result.ok) {
