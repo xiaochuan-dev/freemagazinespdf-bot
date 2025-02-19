@@ -2,6 +2,7 @@ const { writeFile } = require('fs/promises');
 const fs = require('fs');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const path = require('path');
+const FormData = require('form-data');
 
 const uri = `mongodb+srv://xiaochuan:${process.env.MONGO_PWD}@cluster0.ei6dm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -37,23 +38,23 @@ class Bot {
     };
   }
 
-  async sendFile(filePath, title, filename, fileurl) {
+  async sendFile(filePath, title, filename) {
     const url = `https://api.telegram.org/bot${token}/sendDocument`;
 
     const formData = new FormData();
     formData.append('chat_id', groupId);
     formData.append(
       'document',
-      fileurl
+      fs.createReadStream(filePath, {
+        filename
+      })
     );
     formData.append('caption', title);
 
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: formData.getHeaders(),
     });
     const t = await response.json();
     console.log('t is ', t)
@@ -81,9 +82,9 @@ class Bot {
 
     for (const item of magazineNewList) {
       const { title, url, _id } = item;
-      // const { filePath, filename } = await this.download(url);
+      const { filePath, filename } = await this.download(url);
 
-      await this.sendFile('', title, '', url);
+      await this.sendFile(filePath, title, filename);
 
       await magazineCollection.insertOne({
         title,
