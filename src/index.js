@@ -58,12 +58,14 @@ class Bot {
       },
     });
 
-    const result = await response.json();
-    if (result.ok) {
-      console.log('文件已发送:', result);
-    } else {
-      console.error('发送文件失败:', result.description);
-    }
+    console.log(response.text())
+
+    // const result = await response.json();
+    // if (result.ok) {
+    //   console.log('文件已发送:', result);
+    // } else {
+    //   console.error('发送文件失败:', result.description);
+    // }
   }
 
   async run() {
