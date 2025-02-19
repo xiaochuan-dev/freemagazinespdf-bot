@@ -31,10 +31,13 @@ class Bot {
 
     await writeFile(filePath, Buffer.from(bs), 'binary');
 
-    return filePath;
+    return {
+      filePath,
+      filename: name,
+    };
   }
 
-  async sendFile(filePath, title) {
+  async sendFile(filePath, title, filename) {
     const url = `https://api.telegram.org/bot${token}/sendDocument`;
 
     const formData = new FormData();
@@ -80,9 +83,9 @@ class Bot {
 
     for (const item of magazineNewList) {
       const { title, url, _id } = item;
-      const filePath = await this.download(url);
+      const { filePath, filename } = await this.download(url);
 
-      await this.sendFile(filePath, title);
+      await this.sendFile(filePath, title, filename);
 
       await magazineCollection.insertOne({
         title,
