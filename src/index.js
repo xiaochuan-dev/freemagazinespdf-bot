@@ -54,7 +54,9 @@ class Bot {
       const response = await fetch(url, {
         method: 'POST',
         body: formData,
-        headers: formData.getHeaders(),
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
       const result = await response.json();
