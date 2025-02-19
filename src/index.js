@@ -50,23 +50,19 @@ class Bot {
     );
     formData.append('caption', title);
 
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
-      const result = await response.json();
-      if (result.ok) {
-        console.log('文件已发送:', result);
-      } else {
-        console.error('发送文件失败:', result.description);
-      }
-    } catch (error) {
-      console.error('发送文件时发生错误:', error);
+    const result = await response.json();
+    if (result.ok) {
+      console.log('文件已发送:', result);
+    } else {
+      console.error('发送文件失败:', result.description);
     }
   }
 
@@ -94,7 +90,6 @@ class Bot {
         url,
       });
       await magazineNewCollection.deleteOne({ _id });
-
     }
   }
 }
