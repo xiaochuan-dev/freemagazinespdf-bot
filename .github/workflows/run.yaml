@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          curl -I https://freemagazinespdf.com
+          curl -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36" \
+            -H "Referer: https://freemagazinespdf.com/page/2/"
+            -H ""
+            -I https://freemagazinespdf.com
       
       
