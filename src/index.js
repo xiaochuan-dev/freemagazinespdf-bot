@@ -56,7 +56,11 @@ class Bot {
       body: formData,
       headers: formData.getHeaders(),
     });
-    const t = await response.json();
+
+    console.log(response.status);
+    console.log(response.headers);
+
+    const t = await response.text();
     console.log('t is ', t)
 
     const result = JSON.parse(t);
