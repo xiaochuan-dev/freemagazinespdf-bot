@@ -1,114 +1,27 @@
-const { writeFile } = require('fs/promises');
-const fs = require('fs');
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const path = require('path');
-const TelegramBot = require('node-telegram-bot-api');
+const cheerio = require('cheerio');
 
-const uri = `mongodb+srv://xiaochuan:${process.env.MONGO_PWD}@cluster0.ei6dm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+async function getListItems(url) {
+  const r = await fetch(url);
+  const text = await r.text();
 
-const token = process.env.TELEGRAM_BOT_TOKEN;
-const groupId = '-1002498689008';
+  const $ = cheerio.load(text);
 
-const telegramBot = new TelegramBot(token, { polling: true });
+  const res = [];
+  const items = $('.generate-columns-container article .entry-title a');
 
-class Bot {
-  client;
-  constructor() {
-    this.client = new MongoClient(uri, {
-      serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-      },
+  items.each((index, element) => {
+    const e = $(element);
+    const title = e.text();
+    const url = e.attr('href');
+
+    res.push({
+      title,
+      url
     });
-  }
+  });
 
-  async download(url) {
-    const _arr = url.split('/');
-    const name = _arr[_arr.length - 1];
+  console.log(res);
 
-    const r1 = await fetch(url);
-    const bs = await r1.arrayBuffer();
-    const currentDirectory = process.cwd();
-    const filePath = path.join(currentDirectory, 'output', name);
-
-    await writeFile(filePath, Buffer.from(bs), 'binary');
-
-    return {
-      filePath,
-      filename: name,
-    };
-  }
-
-  async sendFile(filePath, title, filename) {
-
-    const fileStream = fs.createReadStream(filePath);
-    await telegramBot.sendVideo(groupId, fileStream, {
-      caption: title
-    });
-
-    // const url = `https://api.telegram.org/bot${token}/sendDocument`;
-
-    // const formData = new FormData();
-    // formData.append('chat_id', groupId);
-    // formData.append(
-    //   'document',
-    //   fs.createReadStream(filePath, {
-    //     filename
-    //   })
-    // );
-    // formData.append('caption', title);
-
-    // const response = await fetch(url, {
-    //   method: 'POST',
-    //   body: formData,
-    //   headers: formData.getHeaders(),
-    // });
-
-    // console.log(response.status);
-    // console.log(response.headers);
-
-    // const t = await response.text();
-    // console.log('t is ', t)
-
-    // const result = JSON.parse(t);
-    // if (result.ok) {
-    //   console.log('文件已发送:', result);
-    // } else {
-    //   console.error('发送文件失败:', result.description);
-    // }
-  }
-
-  async run() {
-    await this.client.connect();
-    await this.client.db('admin').command({ ping: 1 });
-    console.log(
-      'Pinged your deployment. You successfully connected to MongoDB!'
-    );
-
-    const database = this.client.db('dev');
-
-    const magazineNewCollection = database.collection('magazine_new');
-    const magazineCollection = database.collection('magazine');
-    const magazineNewList = await magazineNewCollection.find({}).toArray();
-
-    for (const item of magazineNewList) {
-      const { title, url, _id } = item;
-      const { filePath, filename } = await this.download(url);
-
-      await this.sendFile(filePath, title, filename);
-
-      await magazineCollection.insertOne({
-        title,
-        url,
-      });
-      await magazineNewCollection.deleteOne({ _id });
-    }
-  }
 }
 
-(async () => {
-  const bot = new Bot();
-
-  await bot.run();
-})();
+getListItems('https://freemagazinespdf.com/');

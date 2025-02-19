@@ -1,0 +1,12 @@
+steps:
+  - name: run
+    when:
+      - branch: master
+        event: push
+
+    image: node:22
+    commands:
+      - curl -I https://freemagazinespdf.com/
+      - corepack enable
+      - yarn
+      - node src
