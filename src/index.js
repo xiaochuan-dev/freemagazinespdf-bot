@@ -55,8 +55,10 @@ class Bot {
         'Content-Type': 'multipart/form-data',
       },
     });
+    const t = await response.json();
+    console.log('t is ', t)
 
-    const result = await response.json();
+    const result = JSON.parse(t);
     if (result.ok) {
       console.log('文件已发送:', result);
     } else {
