@@ -43,7 +43,7 @@ class Bot {
   async sendFile(filePath, title, filename) {
 
     const fileStream = fs.createReadStream(filePath);
-    await telegramBot.sendDocument(groupId, fileStream, {
+    await telegramBot.sendVideo(groupId, fileStream, {
       caption: title
     });
 
