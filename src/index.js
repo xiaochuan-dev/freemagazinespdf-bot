@@ -79,7 +79,7 @@ class Bot {
     const magazineNewList = await magazineNewCollection.find({}).toArray();
 
     for (const item of magazineNewList) {
-      const { title, url } = item;
+      const { title, url, _id } = item;
       const filePath = await this.download(url);
 
       await this.sendFile(filePath, title);
@@ -88,6 +88,8 @@ class Bot {
         title,
         url,
       });
+      await magazineNewCollection.deleteOne({ _id });
+
     }
   }
 }
