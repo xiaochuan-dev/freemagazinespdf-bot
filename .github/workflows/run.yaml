@@ -17,11 +17,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-
-      - run: yarn
-      - name: Start
-        run: node src/index.js
-        env:
-          MONGO_PWD: ${{ secrets.MONGO_PWD }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      - run: |
+          curl -I https://freemagazinespdf.com
+      # - run: yarn
+      # - name: Start
+      #   run: node src/index.js
+      #   env:
+      #     MONGO_PWD: ${{ secrets.MONGO_PWD }}
+      #     TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       
