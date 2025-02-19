@@ -37,16 +37,14 @@ class Bot {
     };
   }
 
-  async sendFile(filePath, title, filename) {
+  async sendFile(filePath, title, filename, fileurl) {
     const url = `https://api.telegram.org/bot${token}/sendDocument`;
 
     const formData = new FormData();
     formData.append('chat_id', groupId);
     formData.append(
       'document',
-      fs.createReadStream(filePath, {
-        filename,
-      })
+      fileurl
     );
     formData.append('caption', title);
 
@@ -59,14 +57,12 @@ class Bot {
     });
     const t = await response.text();
 
-    console.log(t);
-
-    // const result = await response.json();
-    // if (result.ok) {
-    //   console.log('文件已发送:', result);
-    // } else {
-    //   console.error('发送文件失败:', result.description);
-    // }
+    const result = await response.json();
+    if (result.ok) {
+      console.log('文件已发送:', result);
+    } else {
+      console.error('发送文件失败:', result.description);
+    }
   }
 
   async run() {
@@ -84,9 +80,9 @@ class Bot {
 
     for (const item of magazineNewList) {
       const { title, url, _id } = item;
-      const { filePath, filename } = await this.download(url);
+      // const { filePath, filename } = await this.download(url);
 
-      await this.sendFile(filePath, title, filename);
+      await this.sendFile(filePath, title, filename, url);
 
       await magazineCollection.insertOne({
         title,
