@@ -82,7 +82,7 @@ class Bot {
       const { title, url, _id } = item;
       // const { filePath, filename } = await this.download(url);
 
-      await this.sendFile(filePath, title, filename, url);
+      await this.sendFile('', title, '', url);
 
       await magazineCollection.insertOne({
         title,
