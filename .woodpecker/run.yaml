@@ -9,4 +9,4 @@ steps:
       - curl -I https://freemagazinespdf.com/
       - corepack enable
       - yarn
-      - node src
+      - node src/index.js
