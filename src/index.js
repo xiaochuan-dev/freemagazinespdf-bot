@@ -2,12 +2,14 @@ const { writeFile } = require('fs/promises');
 const fs = require('fs');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const path = require('path');
-const FormData = require('form-data');
+const TelegramBot = require('node-telegram-bot-api');
 
 const uri = `mongodb+srv://xiaochuan:${process.env.MONGO_PWD}@cluster0.ei6dm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const groupId = '-1002498689008';
+
+const telegramBot = new TelegramBot(token, { polling: true });
 
 class Bot {
   client;
@@ -39,36 +41,42 @@ class Bot {
   }
 
   async sendFile(filePath, title, filename) {
-    const url = `https://api.telegram.org/bot${token}/sendDocument`;
 
-    const formData = new FormData();
-    formData.append('chat_id', groupId);
-    formData.append(
-      'document',
-      fs.createReadStream(filePath, {
-        filename
-      })
-    );
-    formData.append('caption', title);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-      headers: formData.getHeaders(),
+    const fileStream = fs.createReadStream(filePath);
+    await telegramBot.sendDocument(groupId, fileStream, {
+      caption: title
     });
 
-    console.log(response.status);
-    console.log(response.headers);
+    // const url = `https://api.telegram.org/bot${token}/sendDocument`;
 
-    const t = await response.text();
-    console.log('t is ', t)
+    // const formData = new FormData();
+    // formData.append('chat_id', groupId);
+    // formData.append(
+    //   'document',
+    //   fs.createReadStream(filePath, {
+    //     filename
+    //   })
+    // );
+    // formData.append('caption', title);
 
-    const result = JSON.parse(t);
-    if (result.ok) {
-      console.log('文件已发送:', result);
-    } else {
-      console.error('发送文件失败:', result.description);
-    }
+    // const response = await fetch(url, {
+    //   method: 'POST',
+    //   body: formData,
+    //   headers: formData.getHeaders(),
+    // });
+
+    // console.log(response.status);
+    // console.log(response.headers);
+
+    // const t = await response.text();
+    // console.log('t is ', t)
+
+    // const result = JSON.parse(t);
+    // if (result.ok) {
+    //   console.log('文件已发送:', result);
+    // } else {
+    //   console.error('发送文件失败:', result.description);
+    // }
   }
 
   async run() {
