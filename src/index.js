@@ -77,18 +77,27 @@ async function getListItems(url) {
 }
 
 async function writePackagejson(newPdf) {
-  const d = (new Date()).toISOString();
+  const d = new Date().toISOString();
+
+  const now = new Date();
+  const numericString = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+    String(now.getHours()).padStart(2, '0'),
+    String(now.getMinutes()).padStart(2, '0'),
+  ].join('');
 
   const obj = {
     name: '@xiaochuan-dev/freemagazinespdf',
-    version: `0.0.1-${d}`,
+    version: `0.0.1-dev-${numericString}`,
     files: ['*.pdf'],
     license: 'MIT',
     publishConfig: {
       access: 'public',
       registry: 'https://registry.npmjs.org/',
     },
-    newPdf
+    newPdf,
   };
 
   await writeFile(`./output/package.json`, JSON.stringify(obj), 'utf-8');
@@ -121,7 +130,6 @@ async function start() {
       console.log('插入成功，文档 ID:', result.insertedId);
 
       newPdf.push(doc);
-
     }
   }
 
