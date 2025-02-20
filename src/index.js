@@ -24,4 +24,4 @@ async function getListItems(url) {
 
 }
 
-getListItems('https://freemagazinespdf.com/');
+getListItems('https://proxy.2239559319.workers.dev/');
