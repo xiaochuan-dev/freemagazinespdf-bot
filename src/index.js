@@ -76,9 +76,7 @@ async function getListItems(url) {
   return res;
 }
 
-async function writePackagejson(newPdf) {
-  const d = new Date().toISOString();
-
+async function writePackagejson(_newPdf) {
   const now = new Date();
   const numericString = [
     now.getFullYear(),
@@ -87,6 +85,12 @@ async function writePackagejson(newPdf) {
     String(now.getHours()).padStart(2, '0'),
     String(now.getMinutes()).padStart(2, '0'),
   ].join('');
+
+  const version = `0.0.1-dev-${numericString}`;
+  const newPdf = _newPdf.map((v) => ({
+    ...v,
+    version
+  }));
 
   const obj = {
     name: '@xiaochuan-dev/freemagazinespdf',
