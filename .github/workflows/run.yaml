@@ -30,7 +30,7 @@ jobs:
         run: |
           cd output
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-          npm publish
+          yarn publish --non-interactive --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
