@@ -51,7 +51,10 @@ async function d1({ url, title }) {
   const dlink = await getDownloadLink({ url });
   const pdflink = await getPdfUrl(dlink);
   const filename = await download({ url: pdflink, title });
-  return filename;
+  return {
+    filename,
+    pdflink
+  };
 }
 
 async function getListItems(url) {
@@ -129,12 +132,12 @@ async function start() {
       console.log('数据存在:', result);
     } else {
       const doc = { url: item.url, title: item.title };
-      const filename = await d1(doc);
+      const { filename, pdflink } = await d1(doc);
 
-      const result = await collection.insertOne({ filename, title: item.title });
+      const result = await collection.insertOne({ filename, title: item.title, pdflink });
       console.log('插入成功，文档 ID:', result.insertedId);
 
-      newPdf.push({ filename, title: item.title });
+      newPdf.push({ filename, title: item.title, pdflink });
     }
   }
 
