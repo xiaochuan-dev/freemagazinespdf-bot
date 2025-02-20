@@ -21,6 +21,7 @@ async function download({ url, title }) {
   const bs = await r.arrayBuffer();
 
   await writeFile(`./output/${filename}`, Buffer.from(bs), 'binary');
+  return filename;
 }
 
 async function getPdfUrl(downloadLink) {
@@ -49,7 +50,8 @@ async function getDownloadLink({ url }) {
 async function d1({ url, title }) {
   const dlink = await getDownloadLink({ url });
   const pdflink = await getPdfUrl(dlink);
-  await download({ url: pdflink, title });
+  const filename = await download({ url: pdflink, title });
+  return filename;
 }
 
 async function getListItems(url) {
@@ -127,12 +129,12 @@ async function start() {
       console.log('数据存在:', result);
     } else {
       const doc = { url: item.url, title: item.title };
-      await d1(doc);
+      const filename = await d1(doc);
 
-      const result = await collection.insertOne(doc);
+      const result = await collection.insertOne({ filename, title: item.title });
       console.log('插入成功，文档 ID:', result.insertedId);
 
-      newPdf.push(doc);
+      newPdf.push({ filename, title: item.title });
     }
   }
 
