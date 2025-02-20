@@ -1,4 +1,16 @@
 const cheerio = require('cheerio');
+const { writeFile } = require('fs/promises');
+
+async function download({ url, title }) {
+  const _arr = url.split('/');
+  const filename = _arr[_arr.length - 1];
+
+  const r = await fetch(url);
+  const bs = await r.arrayBuffer();
+
+  await writeFile(`./output/${filename}`, Buffer.from(bs), 'binary');
+
+}
 
 async function getPdfUrl(downloadLink) {
   const r = await fetch(downloadLink);
@@ -23,6 +35,12 @@ async function getDownloadLink({ url }) {
   return downloadLink;
 }
 
+async function d1({ url, title }) {
+  const dlink = await getDownloadLink({ url });
+  const pdflink = await getPdfUrl(dlink);
+  await download({ url: pdflink, title });
+}
+
 async function getListItems(url) {
   const r = await fetch(url);
   const text = await r.text();
@@ -43,8 +61,7 @@ async function getListItems(url) {
     });
   });
 
-  const dlink = await getDownloadLink({ url: res[0].url })
-  console.log(await getPdfUrl(dlink));
+  await d1({url: res[0].url, title: res[0].title  });
 
   return res;
 }
