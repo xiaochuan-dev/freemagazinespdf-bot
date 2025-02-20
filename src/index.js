@@ -101,6 +101,7 @@ async function writePackagejson(_newPdf) {
       access: 'public',
       registry: 'https://registry.npmjs.org/',
     },
+    newPdf,
   };
 
   await writeFile(`./output/package.json`, JSON.stringify(obj), 'utf-8');
