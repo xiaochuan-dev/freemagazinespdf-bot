@@ -17,6 +17,7 @@
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
     "form-data": "^4.0.2",
+    "fs-extra": "^11.3.0",
     "mongodb": "^6.13.0",
     "node-telegram-bot-api": "^0.66.0",
     "p-limit": "3.1.0"

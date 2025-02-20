@@ -27,15 +27,17 @@ jobs:
           MONGO_PWD: ${{ secrets.MONGO_PWD }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
+      - run: ls -R output
+
       - name: Publish package
         run: |
           cd output
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-          yarn publish --non-interactive --access public
+          for dir in */ ; do
+            (cd "$dir" && echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc && npm publish)
+          done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - run: ls -R output
       - name: Bot Send
         run: node src/bot
         env:

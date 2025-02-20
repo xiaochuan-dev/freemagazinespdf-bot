@@ -1,6 +1,8 @@
 const cheerio = require('cheerio');
 const { writeFile } = require('fs/promises');
+const { ensureDir } = require('fs-extra');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const path = require('path');
 
 const MONGO_PWD = process.env.MONGO_PWD;
 
@@ -13,14 +15,18 @@ const client = new MongoClient(uri, {
   },
 });
 
-async function download({ url, title }) {
+async function download({ url, index }) {
   const _arr = url.split('/');
   const filename = _arr[_arr.length - 1].replace('_freemagazinespdf_com', '');
 
   const r = await fetch(url);
   const bs = await r.arrayBuffer();
 
-  await writeFile(`./output/${filename}`, Buffer.from(bs), 'binary');
+  const pwd = process.cwd();
+  const outDir = path.join(pwd, 'output', index.toString());
+  await ensureDir(outDir);
+
+  await writeFile(path.join(outDir, filename), Buffer.from(bs), 'binary');
   return filename;
 }
 
@@ -47,13 +53,13 @@ async function getDownloadLink({ url }) {
   return downloadLink;
 }
 
-async function d1({ url, title }) {
+async function d1({ url, index }) {
   const dlink = await getDownloadLink({ url });
   const pdflink = await getPdfUrl(dlink);
-  const filename = await download({ url: pdflink, title });
+  const filename = await download({ url: pdflink, index });
   return {
     filename,
-    pdflink
+    pdflink,
   };
 }
 
@@ -80,7 +86,7 @@ async function getListItems(url) {
   return res;
 }
 
-async function writePackagejson(_newPdf) {
+async function writePackagejson(_newPdf, index) {
   const now = new Date();
   const numericString = [
     now.getFullYear(),
@@ -90,15 +96,18 @@ async function writePackagejson(_newPdf) {
     String(now.getMinutes()).padStart(2, '0'),
   ].join('');
 
-  const version = `0.0.1-dev-${numericString}`;
-  const newPdf = _newPdf.map((v) => ({
-    ...v,
-    version
-  }));
+  const version = `0.0.1-dev-${numericString}-${index}`;
+  const newPdf = _newPdf.map((v) => {
+    const { write, ...rest } = v;
+    return {
+      ...rest,
+      version,
+    };
+  });
 
   const obj = {
     name: '@xiaochuan-dev/freemagazinespdf',
-    version: `0.0.1-dev-${numericString}`,
+    version,
     files: ['*.pdf'],
     license: 'MIT',
     publishConfig: {
@@ -108,7 +117,7 @@ async function writePackagejson(_newPdf) {
     newPdf,
   };
 
-  await writeFile(`./output/package.json`, JSON.stringify(obj), 'utf-8');
+  await writeFile(`./output/${index}/package.json`, JSON.stringify(obj), 'utf-8');
   console.log(`写入package.json`);
 }
 
@@ -124,24 +133,39 @@ async function start() {
 
   const newPdf = [];
 
-  for (const item of items) {
+  for (let index = 0; index < items.length; index++) {
+    const item = items[index];
+
     const query = { title: item.title };
     const result = await collection.findOne(query);
 
     if (result) {
       console.log('数据存在:', result);
     } else {
-      const doc = { url: item.url, title: item.title };
-      const { filename, pdflink } = await d1(doc);
+      const { filename, pdflink } = await d1({ url: item.url, index });
 
-      const result = await collection.insertOne({ filename, title: item.title, pdflink });
+      const result = await collection.insertOne({
+        filename,
+        title: item.title,
+        pdflink,
+      });
       console.log('插入成功，文档 ID:', result.insertedId);
 
-      newPdf.push({ filename, title: item.title, pdflink });
+      newPdf.push({
+        filename,
+        title: item.title,
+        pdflink,
+        index,
+        write: async (_newPdf) => {
+          await writePackagejson(_newPdf, index);
+        },
+      });
     }
   }
 
-  await writePackagejson(newPdf);
+  for (const { write } of newPdf) {
+    await write(newPdf);
+  }
 
   await client.close();
 }
