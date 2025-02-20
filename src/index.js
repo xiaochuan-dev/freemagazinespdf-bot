@@ -1,5 +1,18 @@
 const cheerio = require('cheerio');
 
+async function getPdfUrl(downloadLink) {
+  const r = await fetch(downloadLink);
+  const text = await r.text();
+
+  const _arr = text.match(/"docUrl":"(.+?)"/);
+
+  if (_arr[1]) {
+    return _arr[1];
+  } else {
+    return null;
+  }
+}
+
 async function getDownloadLink({ url }) {
   const r = await fetch(url);
   const text = await r.text();
@@ -30,7 +43,8 @@ async function getListItems(url) {
     });
   });
 
-  console.log(await getDownloadLink({ url: res[0].url }));
+  const dlink = await getDownloadLink({ url: res[0].url })
+  console.log(await getPdfUrl(dlink));
 
   return res;
 }
