@@ -15,7 +15,7 @@ const client = new MongoClient(uri, {
 
 async function download({ url, title }) {
   const _arr = url.split('/');
-  const filename = _arr[_arr.length - 1];
+  const filename = _arr[_arr.length - 1].replace('_freemagazinespdf_com', '');
 
   const r = await fetch(url);
   const bs = await r.arrayBuffer();
