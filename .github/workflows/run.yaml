@@ -47,5 +47,6 @@ jobs:
 
       - name: Bot Send
         run: node src/bot
+        if: steps.check_subdirs.outputs.subdirs != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
