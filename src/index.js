@@ -86,7 +86,7 @@ async function getListItems(url) {
   return res;
 }
 
-async function writePackagejson(_newPdf, index) {
+function getBaseVersion() {
   const now = new Date();
   const numericString = [
     now.getFullYear(),
@@ -95,12 +95,17 @@ async function writePackagejson(_newPdf, index) {
     String(now.getHours()).padStart(2, '0'),
     String(now.getMinutes()).padStart(2, '0'),
   ].join('');
+ 
+  return `0.0.1-dev-${numericString}-`;
+}
 
-  const version = `0.0.1-dev-${numericString}-${index}`;
+async function writePackagejson(_newPdf, index) {
+  
+  const version = _newPdf.filter(v => !!v).find(v => v.index === index).version;
+
   const newPdf = _newPdf.filter(v => !!v).map((v) => {
     return {
       ...v,
-      version,
     };
   });
 
@@ -132,6 +137,8 @@ async function start() {
 
   const newPdf = [];
 
+  const baseVersion = getBaseVersion();
+
   for (let index = 0; index < items.length; index++) {
     const item = items[index];
 
@@ -151,11 +158,13 @@ async function start() {
       });
       console.log('插入成功，文档 ID:', result.insertedId);
 
+      const version = `${baseVersion}${index}`;
       newPdf.push({
         filename,
         title: item.title,
         pdflink,
         index,
+        version
       });
     }
   }
