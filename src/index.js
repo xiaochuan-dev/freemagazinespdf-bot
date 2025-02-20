@@ -3,7 +3,6 @@ const { writeFile } = require('fs/promises');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
 const MONGO_PWD = process.env.MONGO_PWD;
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 const uri = `mongodb+srv://xiaochuan:${MONGO_PWD}@cluster0.ei6dm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 const client = new MongoClient(uri, {
@@ -16,7 +15,7 @@ const client = new MongoClient(uri, {
 
 async function download({ url, title }) {
   const _arr = url.split('/');
-  const filename = _arr[_arr.length - 1].replace('_freemagazinespdf_com', '');
+  const filename = _arr[_arr.length - 1];
 
   const r = await fetch(url);
   const bs = await r.arrayBuffer();
@@ -64,7 +63,7 @@ async function getListItems(url) {
 
   items.each((index, element) => {
     const e = $(element);
-    const title = e.text().replace('_freemagazinespdf_com', '');
+    const title = e.text();
     const url = e.attr('href');
 
     res.push({
