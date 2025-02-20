@@ -97,10 +97,9 @@ async function writePackagejson(_newPdf, index) {
   ].join('');
 
   const version = `0.0.1-dev-${numericString}-${index}`;
-  const newPdf = _newPdf.map((v) => {
-    const { write, ...rest } = v;
+  const newPdf = _newPdf.filter(v => !!v).map((v) => {
     return {
-      ...rest,
+      ...v,
       version,
     };
   });
@@ -141,6 +140,7 @@ async function start() {
 
     if (result) {
       console.log('数据存在:', result);
+      newPdf.push(null);
     } else {
       const { filename, pdflink } = await d1({ url: item.url, index });
 
@@ -156,15 +156,16 @@ async function start() {
         title: item.title,
         pdflink,
         index,
-        write: async (_newPdf) => {
-          await writePackagejson(_newPdf, index);
-        },
       });
     }
   }
 
-  for (const { write } of newPdf) {
-    await write(newPdf);
+  for (let index = 0; index < newPdf.length; index++) {
+    const item = newPdf[index];
+
+    if (item) {
+      await writePackagejson(newPdf, index);
+    }
   }
 
   await client.close();
