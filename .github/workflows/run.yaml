@@ -13,8 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          curl -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36" \
-            -H "Referer: https://freemagazinespdf.com/page/2/" \
-            -I https://proxy.2239559319.workers.dev/
+          curl  -I https://proxy.2239559319.workers.dev/
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - run: yarn
+      - run: node src
       
       

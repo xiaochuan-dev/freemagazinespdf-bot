@@ -1,5 +1,15 @@
 const cheerio = require('cheerio');
 
+async function getDownloadLink({ url }) {
+  const r = await fetch(url);
+  const text = await r.text();
+
+  const $ = cheerio.load(text);
+
+  const downloadLink = $('.wp-block-button a').attr('href');
+  return downloadLink;
+}
+
 async function getListItems(url) {
   const r = await fetch(url);
   const text = await r.text();
@@ -20,8 +30,9 @@ async function getListItems(url) {
     });
   });
 
-  console.log(res);
+  console.log(await getDownloadLink({ url: res[0].url }));
 
+  return res;
 }
 
 getListItems('https://proxy.2239559319.workers.dev/');
