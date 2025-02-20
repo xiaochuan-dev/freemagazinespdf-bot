@@ -7,7 +7,7 @@ async function getPdfUrl(downloadLink) {
   const _arr = text.match(/"docUrl":"(.+?)"/);
 
   if (_arr[1]) {
-    return _arr[1];
+    return _arr[1].replace(/\\/g, '');
   } else {
     return null;
   }
