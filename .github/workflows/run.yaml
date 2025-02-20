@@ -29,7 +29,14 @@ jobs:
 
       - run: ls -R output
 
+      - name: Check for subdirectories in output
+        id: check_subdirs
+        run: |
+          SUBDIRS=$(find output -mindepth 1 -maxdepth 1 -type d)
+          echo "::set-output name=subdirs::$SUBDIRS"
+
       - name: Publish package
+        if: steps.check_subdirs.outputs.subdirs != ''
         run: |
           cd output
           for dir in */ ; do
