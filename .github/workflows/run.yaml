@@ -27,7 +27,7 @@ jobs:
           MONGO_PWD: ${{ secrets.MONGO_PWD }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
-      - run: ls -R output
+      - run: ls -lR output
 
       - name: Check for subdirectories in output
         id: check_subdirs
