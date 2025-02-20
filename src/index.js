@@ -1,5 +1,18 @@
 const cheerio = require('cheerio');
 const { writeFile } = require('fs/promises');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+
+const MONGO_PWD = process.env.MONGO_PWD;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
+const uri = `mongodb+srv://xiaochuan:${MONGO_PWD}@cluster0.ei6dm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+});
 
 async function download({ url, title }) {
   const _arr = url.split('/');
@@ -9,7 +22,6 @@ async function download({ url, title }) {
   const bs = await r.arrayBuffer();
 
   await writeFile(`./output/${filename}`, Buffer.from(bs), 'binary');
-
 }
 
 async function getPdfUrl(downloadLink) {
@@ -57,13 +69,65 @@ async function getListItems(url) {
 
     res.push({
       title,
-      url
+      url,
     });
   });
-
-  await d1({url: res[0].url, title: res[0].title  });
 
   return res;
 }
 
-getListItems('https://proxy.2239559319.workers.dev/');
+async function writePackagejson(newPdf) {
+  const d = (new Date()).toISOString();
+
+  const obj = {
+    name: '@xiaochuan-dev/freemagazinespdf',
+    version: `0.0.1-${d}`,
+    files: ['*.pdf'],
+    license: 'MIT',
+    publishConfig: {
+      access: 'public',
+      registry: 'https://registry.npmjs.org/',
+    },
+    newPdf
+  };
+
+  await writeFile(`./output/package.json`, JSON.stringify(obj), 'utf-8');
+  console.log(`写入package.json`);
+}
+
+async function start() {
+  await client.connect();
+  await client.db('admin').command({ ping: 1 });
+  console.log('Pinged your deployment. You successfully connected to MongoDB!');
+  const db = client.db('dev');
+  const collection = db.collection('magazine');
+
+  const url = 'https://proxy.2239559319.workers.dev/';
+  const items = await getListItems(url);
+
+  const newPdf = [];
+
+  for (const item of items) {
+    const query = { title: item.title };
+    const result = await collection.findOne(query);
+
+    if (result) {
+      console.log('数据存在:', result);
+    } else {
+      const doc = { url: item.url, title: item.title };
+      await d1(doc);
+
+      const result = await collection.insertOne(doc);
+      console.log('插入成功，文档 ID:', result.insertedId);
+
+      newPdf.push(doc);
+
+    }
+  }
+
+  await writePackagejson(newPdf);
+
+  await client.close();
+}
+
+start();

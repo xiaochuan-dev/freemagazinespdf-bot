@@ -20,11 +20,18 @@ jobs:
         with:
           node-version: '22.x'
       - run: yarn
+
       - run: node src
+        env:
+          MONGO_PWD: ${{ secrets.MONGO_PWD }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
+      - name: Publish package
+        run: |
+          cd output
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - run: ls -R output
-      - name: Save
-        uses: actions/upload-artifact@v4
-        with:
-          name: output
-          path: output
       
