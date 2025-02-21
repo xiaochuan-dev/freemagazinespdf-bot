@@ -78,6 +78,10 @@ async function start() {
 
   const urls = [
     'https://freemagazinespdf.com/',
+    'https://freemagazinespdf.com/page/2/',
+    'https://freemagazinespdf.com/page/3/',
+    'https://freemagazinespdf.com/page/4/',
+    'https://freemagazinespdf.com/page/5/'
   ];
 
   const items = [];
