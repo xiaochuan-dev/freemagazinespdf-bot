@@ -52,14 +52,6 @@ async function sendMessage(text) {
   }
 }
 
-async function start() {
-  const files = await getFiles();
-
-  for (const file of files) {
-    const { url, title } = file;
-
-    await sendMessage(`[${title}](${url})`);
-  }
-}
-
-start();
+module.exports = {
+  sendMessage
+};
