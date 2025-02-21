@@ -26,27 +26,3 @@ jobs:
         env:
           MONGO_PWD: ${{ secrets.MONGO_PWD }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-
-      - run: ls -lR output
-
-      - name: Check for subdirectories in output
-        id: check_subdirs
-        run: |
-          SUBDIRS=$(find output -mindepth 1 -maxdepth 1 -type d)
-          echo "::set-output name=subdirs::$SUBDIRS"
-
-      - name: Publish package
-        if: steps.check_subdirs.outputs.subdirs != ''
-        run: |
-          cd output
-          for dir in */ ; do
-            (cd "$dir" && echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc && npm publish)
-          done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Bot Send
-        run: node src/bot
-        if: steps.check_subdirs.outputs.subdirs != ''
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
