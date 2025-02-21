@@ -96,6 +96,7 @@ async function start() {
 
   for (let index = 0; index < items.length; index++) {
     const item = items[index];
+    if(item.url){
 
     const query = { title: item.title };
     const result = await collection.findOne(query);
@@ -114,6 +115,7 @@ async function start() {
 
       await sendMessage(`[${item.title}](${pdflink})`);
     }
+}
   }
 
   await client.close();
