@@ -101,7 +101,7 @@ async function start() {
     const result = await collection.findOne(query);
 
     if (result) {
-      console.log('数据存在:', result);
+      console.log('数据存在:', resul.pdflink);
     } else {
       const { filename, pdflink } = await d1({ url: item.url, index });
 
