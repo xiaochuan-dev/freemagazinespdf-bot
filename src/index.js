@@ -40,6 +40,9 @@ async function getDownloadLink({ url }) {
 async function d1({ url, index }) {
   const dlink = await getDownloadLink({ url });
   const pdflink = await getPdfUrl(dlink);
+  const _arr = url.split('/');
+  const filename = _arr[_arr.length - 1].replace('_freemagazinespdf_com', '');
+
   return {
     filename,
     pdflink,
