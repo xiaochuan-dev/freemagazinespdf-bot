@@ -84,7 +84,7 @@ async function start() {
     'https://freemagazinespdf.com/page/2/',
     'https://freemagazinespdf.com/page/3/',
     'https://freemagazinespdf.com/page/4/',
-    'https://freemagazinespdf.com/page/5/'
+    'https://freemagazinespdf.com/page/5/',
   ];
 
   const items = [];
@@ -93,29 +93,29 @@ async function start() {
     items.push(..._items);
   }
 
-
   for (let index = 0; index < items.length; index++) {
     const item = items[index];
-    if(item.url){
+    try {
+      const query = { title: item.title };
+      const result = await collection.findOne(query);
 
-    const query = { title: item.title };
-    const result = await collection.findOne(query);
+      if (result) {
+        console.log('数据存在:', result.pdflink);
+      } else {
+        const { filename, pdflink } = await d1({ url: item.url, index });
 
-    if (result) {
-      console.log('数据存在:', result.pdflink);
-    } else {
-      const { filename, pdflink } = await d1({ url: item.url, index });
+        const result = await collection.insertOne({
+          filename,
+          title: item.title,
+          pdflink,
+        });
+        console.log('插入成功，文档 ID:', result.insertedId);
 
-      const result = await collection.insertOne({
-        filename,
-        title: item.title,
-        pdflink,
-      });
-      console.log('插入成功，文档 ID:', result.insertedId);
-
-      await sendMessage(`[${item.title}](${pdflink})`);
+        await sendMessage(`[${item.title}](${pdflink})`);
+      }
+    } catch (error) {
+      console.log(error);
     }
-}
   }
 
   await client.close();
