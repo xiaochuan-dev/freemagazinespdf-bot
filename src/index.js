@@ -115,7 +115,7 @@ async function start() {
         console.log('插入成功，文档 ID:', result.insertedId);
 
         await sendMessage(
-`![${item.title}](${item.img})
+`${item.img}
 
 [${item.title}](${pdflink})`
 );
