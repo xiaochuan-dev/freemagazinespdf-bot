@@ -114,11 +114,7 @@ async function start() {
         });
         console.log('插入成功，文档 ID:', result.insertedId);
 
-        await sendMessage(
-`${item.img}
-
-[${item.title}](${pdflink})`
-);
+        await sendMessage(`[${item.title}](${pdflink})`, item.img);
       }
     } catch (error) {
       console.log(error);

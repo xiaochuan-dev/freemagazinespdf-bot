@@ -24,11 +24,12 @@ async function getFiles() {
 }
 
 
-async function sendMessage(text) {
-  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+async function sendMessage(text, img) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
   const params = {
     chat_id: CHAT_ID,
-    text: text,
+    photo: img,
+    caption: text,
     parse_mode: 'Markdown',
   };
 
