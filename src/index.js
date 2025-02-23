@@ -56,16 +56,19 @@ async function getListItems(url) {
   const $ = cheerio.load(text);
 
   const res = [];
-  const items = $('.generate-columns-container article .entry-title a');
+  const items = $('.generate-columns-container article');
 
   items.each((index, element) => {
-    const e = $(element);
+    const e = $(element).find('.entry-title a');
     const title = e.text();
     const url = e.attr('href');
+
+    const img = $(element).find('.post-image img').attr('src');
 
     res.push({
       title,
       url,
+      img,
     });
   });
 
@@ -111,7 +114,11 @@ async function start() {
         });
         console.log('插入成功，文档 ID:', result.insertedId);
 
-        await sendMessage(`[${item.title}](${pdflink})`);
+        await sendMessage(
+`![${item.title}](${item.img})
+
+[${item.title}](${pdflink})`
+);
       }
     } catch (error) {
       console.log(error);
