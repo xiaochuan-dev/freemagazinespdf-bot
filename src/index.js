@@ -137,14 +137,10 @@ class CloudflareBypasser {
 
       // 2. 从文章页面获取预览页面链接
       const previewPageUrl = await this.page.evaluate(() => {
-        // 查找下载按钮（指向预览页面）
         const downloadButtons = document.querySelectorAll('a[href*="easyupload.us"]');
         for (const button of downloadButtons) {
           const text = button.textContent.toLowerCase();
-          const hasDownloadText = text.includes('download') || text.includes('get') || text.includes('pdf');
-          const hasDownloadIcon = button.querySelector('i.fa-download') || button.querySelector('[class*="download"]');
-
-          if (hasDownloadText || hasDownloadIcon) {
+          if (text.includes('download') || text.includes('get pdf') || text.includes('pdf')) {
             return button.href;
           }
         }
@@ -161,43 +157,18 @@ class CloudflareBypasser {
       // 3. 访问预览页面
       await this.fetchWithBypass(previewPageUrl);
 
-      // 4. 在预览页面中找到实际的下载按钮
+      // 4. 在预览页面中找到下载按钮链接
       const downloadPageUrl = await this.page.evaluate(() => {
-        // 尝试多个选择器查找下载按钮
-        const selectors = [
-          '.fileviewer-actions a[target="_blank"]',
-          'a.fileviewer-action[href*="easyupload.us"]',
-          '.download-link[href*="easyupload.us"]',
-          'a[href*="easyupload.us"][target="_blank"]'
-        ];
-
-        for (const selector of selectors) {
-          const element = document.querySelector(selector);
-          if (element && element.href) {
-            // 检查是否是下载按钮（不是分享按钮）
-            const text = element.textContent.toLowerCase();
-            const hasDownloadIcon = element.querySelector('i.fa-download');
-            if (text.includes('download') || hasDownloadIcon) {
-              return element.href;
-            }
-          }
+        // 查找下载按钮（不是分享按钮）
+        const downloadBtn = document.querySelector('.fileviewer-actions a[target="_blank"]');
+        if (downloadBtn && downloadBtn.href) {
+          return downloadBtn.href;
         }
-
-        // 如果没有找到，尝试查找所有easyupload链接
-        const allLinks = document.querySelectorAll('a[href*="easyupload.us"]');
-        for (const link of allLinks) {
-          if (link.href !== window.location.href && !link.href.includes('/preview')) {
-            return link.href;
-          }
-        }
-
         return null;
       });
 
       if (!downloadPageUrl) {
         console.log('在预览页面中未找到下载页面链接');
-        // 截屏查看页面状态
-        await this.page.screenshot({ path: 'preview-page.png' });
         return null;
       }
 
@@ -208,42 +179,17 @@ class CloudflareBypasser {
 
       // 6. 获取PDF链接
       const pdfLink = await this.page.evaluate(() => {
-        // 查找PDF下载链接
-        const pdfSelectors = [
-          '.filebox-download a.download-link',
-          '.download-box a[href*=".pdf"]',
-          'a[href*=".pdf"][class*="download"]',
-          'a[href*=".pdf"]'
-        ];
-
-        for (const selector of pdfSelectors) {
-          const element = document.querySelector(selector);
-          if (element && element.href && element.href.includes('.pdf')) {
-            return element.href;
-          }
-        }
-
-        // 如果没有找到，查找包含download文本的PDF链接
-        const allLinks = document.querySelectorAll('a[href*=".pdf"]');
-        for (const link of allLinks) {
-          const text = link.textContent.toLowerCase();
-          if (text.includes('download') || text.includes('pdf')) {
-            return link.href;
-          }
-        }
-
-        return null;
+        const downloadLink = document.querySelector('.filebox-download a.download-link');
+        return downloadLink ? downloadLink.href : null;
       });
 
       if (pdfLink) {
-        console.log(`PDF链接: ${pdfLink}`);
-        return pdfLink;
-      } else {
-        console.log('在下载页面中未找到PDF链接');
-        // 截屏查看页面状态
-        await this.page.screenshot({ path: 'download-page.png' });
-        return null;
+        console.log(`✅ 找到PDF链接: ${pdfLink}`);
+        return pdfLink;  // 直接返回PDF链接，不需要再访问
       }
+
+      console.log('未找到PDF链接');
+      return null;
 
     } catch (error) {
       console.error(`获取下载链接过程中出错: ${error.message}`);
@@ -251,45 +197,62 @@ class CloudflareBypasser {
     }
   }
 
-  // 或者使用更简洁的版本：
+  // 或者更简洁的版本，去掉不必要的访问
   async getDownloadLinkSimple(url) {
+    console.log(`获取下载链接: ${url}`);
+
     try {
-      console.log(`开始获取PDF链接: ${url}`);
+      // 1. 访问文章页面
+      await this.page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+      await this.page.waitForTimeout(2000);
 
-      // 1. 访问预览页面
-      await this.page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 2. 获取预览页面链接
+      const previewPageUrl = await this.page.evaluate(() => {
+        const downloadLink = document.querySelector('a[href*="easyupload.us"]');
+        return downloadLink ? downloadLink.href : null;
+      });
 
-      // 2. 获取下载页面URL
+      if (!previewPageUrl) {
+        console.log('未找到预览页面链接');
+        return null;
+      }
+
+      console.log(`预览页面: ${previewPageUrl}`);
+
+      // 3. 访问预览页面
+      await this.page.goto(previewPageUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+      await this.page.waitForTimeout(2000);
+
+      // 4. 获取下载页面链接
       const downloadPageUrl = await this.page.evaluate(() => {
-        // 查找下载按钮
-        const downloadBtn = document.querySelector('a.fileviewer-action[target="_blank"]');
+        const downloadBtn = document.querySelector('.fileviewer-actions a[target="_blank"]');
         return downloadBtn ? downloadBtn.href : null;
       });
 
       if (!downloadPageUrl) {
-        throw new Error('未找到下载页面链接');
+        console.log('未找到下载页面链接');
+        return null;
       }
 
       console.log(`下载页面: ${downloadPageUrl}`);
 
-      // 3. 访问下载页面
-      await this.page.goto(downloadPageUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 5. 访问下载页面
+      await this.page.goto(downloadPageUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+      await this.page.waitForTimeout(2000);
 
-      // 4. 获取PDF链接
-      const pdfUrl = await this.page.evaluate(() => {
-        // 查找下载链接
+      // 6. 获取PDF链接
+      const pdfLink = await this.page.evaluate(() => {
         const downloadLink = document.querySelector('.filebox-download a.download-link');
         return downloadLink ? downloadLink.href : null;
       });
 
-      if (!pdfUrl) {
-        throw new Error('未找到PDF下载链接');
+      if (pdfLink) {
+        console.log(`✅ 成功获取PDF链接: ${pdfLink}`);
+        return pdfLink;
       }
 
-      console.log(`PDF链接: ${pdfUrl}`);
-      return pdfUrl;
+      console.log('未找到PDF链接');
+      return null;
 
     } catch (error) {
       console.error(`获取下载链接失败: ${error.message}`);
@@ -297,27 +260,25 @@ class CloudflareBypasser {
     }
   }
 
+  // 还需要修改 processItem 函数，去掉对PDF链接的再次访问
   async processItem({ url, index }) {
     console.log(`处理第 ${index + 1} 个项目: ${url}`);
 
-    const downloadLink = await this.getDownloadLink(url);
-    if (!downloadLink) {
-      console.log(`未找到下载链接: ${url}`);
-      return null;
-    }
+    // 获取PDF链接
+    const pdfLink = await this.getDownloadLinkSimple(url);
 
-    const pdfLink = await this.getPdfUrl(downloadLink);
     if (!pdfLink) {
-      console.log(`未找到PDF链接: ${downloadLink}`);
+      console.log(`未找到PDF链接: ${url}`);
       return null;
     }
 
+    // 不需要再访问PDF链接！直接使用
     const _arr = url.split('/');
     const filename = _arr[_arr.length - 1].replace('_freemagazinespdf_com', '');
 
     return {
       filename,
-      pdflink: pdfLink,
+      pdflink: pdfLink,  // 这里就是可以直接使用的PDF下载链接
     };
   }
 
