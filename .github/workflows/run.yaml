@@ -23,16 +23,16 @@ jobs:
           node-version: '22.x'
       - run: yarn
 
-      # - run: node src
-      #   env:
-      #     MONGO_PWD: ${{ secrets.MONGO_PWD }}
-      #     TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      - name: test
-        run: |
-          node test
-      - name: Upload PNG as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-png
-          path: '*.png'
-          retention-days: 30  # 保留30天
+      - run: node src
+        env:
+          MONGO_PWD: ${{ secrets.MONGO_PWD }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      # - name: test
+      #   run: |
+      #     node test
+      # - name: Upload PNG as artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: generated-png
+      #     path: '*.png'
+      #     retention-days: 30  # 保留30天
