@@ -6,7 +6,10 @@ const path = require("path");
 puppeteer.use(StealthPlugin());
 
 async function getItems(page, url) {
-  await page.goto(url);
+  await page.goto(url, {
+    waitUntil: 'domcontentloaded',
+    timeout: 5000
+  });
   await page.waitForTimeout(5000)
   await page.screenshot({ path: 'testresult.png', fullPage: true })
 
