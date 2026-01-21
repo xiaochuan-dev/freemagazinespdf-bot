@@ -31,7 +31,8 @@ async function getItems(page, url) {
     channel: "chrome",
     executablePath: '/usr/bin/chromium-browser', // 或 '/usr/bin/google-chrome'
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    headless: 'new'
+    headless: 'new',
+    pipe: true,
     // headless: false
   });
   const page = await browser.newPage();
