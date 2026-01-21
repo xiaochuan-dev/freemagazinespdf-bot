@@ -1,51 +1,101 @@
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
-const fs = require("fs");
-const path = require("path");
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
+// 使用 stealth 插件
 puppeteer.use(StealthPlugin());
 
-async function getItems(page, url) {
-  await page.goto(url, {
-    waitUntil: 'domcontentloaded',
-    timeout: 5000
+async function bypassCloudflare() {
+  const browser = await puppeteer.launch({
+    headless: false, // 建议先用非无头模式测试
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-web-security',
+      '--disable-features=IsolateOrigins,site-per-process',
+      '--disable-blink-features=AutomationControlled',
+      '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    ]
   });
-  await page.waitForTimeout(5000)
-  await page.screenshot({ path: 'testresult.png', fullPage: true })
 
-  const itemElements = await page.$$(".generate-columns-container article");
-  const items = [];
-  console.log(itemElements);
+  const page = await browser.newPage();
+  
+  // 设置视口大小
+  await page.setViewport({ width: 1366, height: 768 });
+  
+  // 设置语言偏好
+  await page.setExtraHTTPHeaders({
+    'Accept-Language': 'en-US,en;q=0.9',
+  });
+  
+  // 覆盖 webdriver 属性
+  await page.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, 'webdriver', {
+      get: () => undefined
+    });
+  });
+  
+  // 覆盖 chrome 属性
+  await page.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, 'chrome', {
+      get: () => ({
+        app: {
+          isInstalled: false
+        },
+        webstore: {},
+        runtime: {}
+      })
+    });
+  });
+  
+  // 覆盖 permissions 属性
+  await page.evaluateOnNewDocument(() => {
+    const originalQuery = window.navigator.permissions.query;
+    window.navigator.permissions.query = (parameters) => (
+      parameters.name === 'notifications' ?
+        Promise.resolve({ state: Notification.permission }) :
+        originalQuery(parameters)
+    );
+  });
+  
+  // 添加随机鼠标移动
+  await page.evaluateOnNewDocument(() => {
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.dispatchEvent(new MouseEvent('mousemove', {
+          clientX: Math.random() * 800,
+          clientY: Math.random() * 600
+        }));
+      }, 1000);
+    });
+  });
 
-  return {
-    items,
-    nextPageUrl,
-  };
+  // 导航到目标页面
+  await page.goto('https://freemagazinespdf.com', {
+    waitUntil: 'networkidle2',
+    timeout: 60000
+  });
+
+  // 等待可能的验证
+  await page.waitForTimeout(5000);
+  
+  // 检查是否还有验证
+  const hasChallenge = await page.evaluate(() => {
+    return document.body.innerHTML.includes('cf-chl-w') || 
+           document.body.innerHTML.includes('challenge-form') ||
+           window.location.href.includes('challenge');
+  });
+  
+  if (hasChallenge) {
+    console.log('可能需要手动验证...');
+    // 这里可以添加自动处理逻辑或等待用户手动完成
+  }
+
+  // 获取页面内容
+  const content = await page.content();
+  console.log('页面加载成功', content);
+  
+  // 继续其他操作...
+  await browser.close();
 }
 
-(async () => {
-  /**
-   * @type {import('puppeteer-core').Browser}
-   */
-  const browser = await puppeteer.launch({
-    channel: "chrome",
-    executablePath: '/usr/bin/chromium-browser', // 或 '/usr/bin/google-chrome'
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    headless: 'new',
-    pipe: true,
-    // headless: false
-  });
-  const page = await browser.newPage();
-  const res = [];
-  page.on('error', error => {
-            console.log('页面错误:', error.message);
-        });
-        
-        page.on('pageerror', error => {
-            console.log('页面脚本错误:', error.message);
-        });
-
-  getItems(page, 'https://freemagazinespdf.com/');
-
-  await browser.close();
-})();
+bypassCloudflare().catch(console.error);
