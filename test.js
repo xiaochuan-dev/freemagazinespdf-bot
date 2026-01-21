@@ -36,6 +36,13 @@ async function getItems(page, url) {
   });
   const page = await browser.newPage();
   const res = [];
+  page.on('error', error => {
+            console.log('页面错误:', error.message);
+        });
+        
+        page.on('pageerror', error => {
+            console.log('页面脚本错误:', error.message);
+        });
 
   getItems(page, 'https://freemagazinespdf.com/');
 
