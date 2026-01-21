@@ -47,7 +47,7 @@ async function sendMessage(text, img) {
     }
 
     const result = await response.json();
-    console.log('消息发送成功:', result);
+    console.log('消息发送成功');
   } catch (error) {
     console.error('发送消息失败:', error);
   }
