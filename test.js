@@ -7,7 +7,8 @@ puppeteer.use(StealthPlugin());
 
 async function getItems(page, url) {
   await page.goto(url);
-  await page.waitForSelector(".generate-columns-container");
+  await page.waitForTimeout(5000)
+  await page.screenshot({ path: 'testresult.png', fullPage: true })
 
   const itemElements = await page.$$(".generate-columns-container article");
   const items = [];
