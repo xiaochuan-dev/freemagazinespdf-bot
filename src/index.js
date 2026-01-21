@@ -197,75 +197,12 @@ class CloudflareBypasser {
     }
   }
 
-  // 或者更简洁的版本，去掉不必要的访问
-  async getDownloadLinkSimple(url) {
-    console.log(`获取下载链接: ${url}`);
-
-    try {
-      // 1. 访问文章页面
-      await this.page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
-      await this.page.waitForTimeout(2000);
-
-      // 2. 获取预览页面链接
-      const previewPageUrl = await this.page.evaluate(() => {
-        const downloadLink = document.querySelector('a[href*="easyupload.us"]');
-        return downloadLink ? downloadLink.href : null;
-      });
-
-      if (!previewPageUrl) {
-        console.log('未找到预览页面链接');
-        return null;
-      }
-
-      console.log(`预览页面: ${previewPageUrl}`);
-
-      // 3. 访问预览页面
-      await this.page.goto(previewPageUrl, { waitUntil: 'networkidle2', timeout: 60000 });
-      await this.page.waitForTimeout(2000);
-
-      // 4. 获取下载页面链接
-      const downloadPageUrl = await this.page.evaluate(() => {
-        const downloadBtn = document.querySelector('.fileviewer-actions a[target="_blank"]');
-        return downloadBtn ? downloadBtn.href : null;
-      });
-
-      if (!downloadPageUrl) {
-        console.log('未找到下载页面链接');
-        return null;
-      }
-
-      console.log(`下载页面: ${downloadPageUrl}`);
-
-      // 5. 访问下载页面
-      await this.page.goto(downloadPageUrl, { waitUntil: 'networkidle2', timeout: 60000 });
-      await this.page.waitForTimeout(2000);
-
-      // 6. 获取PDF链接
-      const pdfLink = await this.page.evaluate(() => {
-        const downloadLink = document.querySelector('.filebox-download a.download-link');
-        return downloadLink ? downloadLink.href : null;
-      });
-
-      if (pdfLink) {
-        console.log(`✅ 成功获取PDF链接: ${pdfLink}`);
-        return pdfLink;
-      }
-
-      console.log('未找到PDF链接');
-      return null;
-
-    } catch (error) {
-      console.error(`获取下载链接失败: ${error.message}`);
-      return null;
-    }
-  }
-
   // 还需要修改 processItem 函数，去掉对PDF链接的再次访问
   async processItem({ url, index }) {
     console.log(`处理第 ${index + 1} 个项目: ${url}`);
 
     // 获取PDF链接
-    const pdfLink = await this.getDownloadLinkSimple(url);
+    const pdfLink = await this.getDownloadLink(url);
 
     if (!pdfLink) {
       console.log(`未找到PDF链接: ${url}`);
