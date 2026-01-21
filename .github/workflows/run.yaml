@@ -11,7 +11,16 @@ jobs:
   run:
 
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        url: [
+          'https://freemagazinespdf.com',
+          'https://freemagazinespdf.com/page/2/',
+          'https://freemagazinespdf.com/page/3/',
+          'https://freemagazinespdf.com/page/4/',
+          'https://freemagazinespdf.com/page/5/'
+        ]
+          
     steps:
       - uses: actions/checkout@v4
       - run: |
@@ -23,7 +32,7 @@ jobs:
           node-version: '22.x'
       - run: yarn
 
-      - run: node src
+      - run: node src "${{ matrix.url }}"
         env:
           MONGO_PWD: ${{ secrets.MONGO_PWD }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

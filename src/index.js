@@ -289,26 +289,27 @@ async function start() {
     // 初始化 Puppeteer
     await bypasser.init();
 
+
+    const args = process.argv.slice(2);
+    const url = args[0];
     // 要抓取的页面列表
-    const urls = [
-      'https://freemagazinespdf.com/',
-      'https://freemagazinespdf.com/page/2/',
-      'https://freemagazinespdf.com/page/3/',
-      'https://freemagazinespdf.com/page/4/',
-      'https://freemagazinespdf.com/page/5/',
-    ];
+    // const urls = [
+    //   'https://freemagazinespdf.com/',
+    //   'https://freemagazinespdf.com/page/2/',
+    //   'https://freemagazinespdf.com/page/3/',
+    //   'https://freemagazinespdf.com/page/4/',
+    //   'https://freemagazinespdf.com/page/5/',
+    // ];
 
     // 收集所有文章
     const allItems = [];
-    for (const url of urls) {
-      console.log(`正在获取列表: ${url}`);
-      const items = await bypasser.getListItems(url);
-      console.log(`找到 ${items.length} 个项目`);
-      allItems.push(...items);
+    console.log(`正在获取列表: ${url}`);
+    const items = await bypasser.getListItems(url);
+    console.log(`找到 ${items.length} 个项目`);
+    allItems.push(...items);
 
-      // 添加延迟避免被封锁
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
+    // 添加延迟避免被封锁
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     console.log(`总共找到 ${allItems.length} 个项目`);
 
