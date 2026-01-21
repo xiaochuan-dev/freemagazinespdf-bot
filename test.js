@@ -1,102 +1,97 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
-// 使用 stealth 插件
+// 使用隐身插件
 puppeteer.use(StealthPlugin());
 
 async function bypassCloudflare() {
+  console.log('启动浏览器绕过Cloudflare...');
+  
   const browser = await puppeteer.launch({
-    headless: 'new', // 或 true，'new' 是新版本的无头模式
+    headless: true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--disable-gpu',
-      '--window-size=1920,1080',
-      '--single-process', // 在某些环境中可能需要
+      '--disable-dev-shm-usage'
     ]
   });
-
+  
   const page = await browser.newPage();
   
-  // 设置视口大小
-  await page.setViewport({ width: 1366, height: 768 });
-  
-  // 设置语言偏好
-  await page.setExtraHTTPHeaders({
-    'Accept-Language': 'en-US,en;q=0.9',
-  });
-  
-  // 覆盖 webdriver 属性
-  await page.evaluateOnNewDocument(() => {
-    Object.defineProperty(navigator, 'webdriver', {
-      get: () => undefined
+  try {
+    // 关键：设置真实的用户代理
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    
+    // 设置额外的HTTP头
+    await page.setExtraHTTPHeaders({
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Encoding': 'gzip, deflate, br'
     });
-  });
-  
-  // 覆盖 chrome 属性
-  await page.evaluateOnNewDocument(() => {
-    Object.defineProperty(navigator, 'chrome', {
-      get: () => ({
-        app: {
-          isInstalled: false
-        },
-        webstore: {},
-        runtime: {}
-      })
+    
+    // 注入防检测代码
+    await page.evaluateOnNewDocument(() => {
+      // 隐藏webdriver属性
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
     });
-  });
-  
-  // 覆盖 permissions 属性
-  await page.evaluateOnNewDocument(() => {
-    const originalQuery = window.navigator.permissions.query;
-    window.navigator.permissions.query = (parameters) => (
-      parameters.name === 'notifications' ?
-        Promise.resolve({ state: Notification.permission }) :
-        originalQuery(parameters)
-    );
-  });
-  
-  // 添加随机鼠标移动
-  await page.evaluateOnNewDocument(() => {
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        document.dispatchEvent(new MouseEvent('mousemove', {
-          clientX: Math.random() * 800,
-          clientY: Math.random() * 600
-        }));
-      }, 1000);
+    
+    console.log('正在访问网站...');
+    
+    // 访问页面
+    await page.goto('https://freemagazinespdf.com', {
+      waitUntil: 'networkidle2',
+      timeout: 60000
     });
-  });
-
-  // 导航到目标页面
-  await page.goto('https://freemagazinespdf.com', {
-    waitUntil: 'networkidle2',
-    timeout: 60000
-  });
-
-  // 等待可能的验证
-  await page.waitForTimeout(5000);
-  
-  // 检查是否还有验证
-  const hasChallenge = await page.evaluate(() => {
-    return document.body.innerHTML.includes('cf-chl-w') || 
-           document.body.innerHTML.includes('challenge-form') ||
-           window.location.href.includes('challenge');
-  });
-  
-  if (hasChallenge) {
-    console.log('可能需要手动验证...');
-    // 这里可以添加自动处理逻辑或等待用户手动完成
+    
+    // 等待一下，让页面加载
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // 检查是否成功绕过
+    const title = await page.title();
+    console.log('页面标题:', title);
+    
+    const isBlocked = await page.evaluate(() => {
+      return document.title.includes('Just a moment') || 
+             document.body.innerText.includes('Checking your browser');
+    });
+    
+    if (isBlocked) {
+      console.log('⚠️ 仍然被Cloudflare阻挡');
+      
+      // 尝试点击可能的验证按钮
+      await page.evaluate(() => {
+        const buttons = document.querySelectorAll('button, input[type="submit"]');
+        for (let btn of buttons) {
+          const text = (btn.textContent || btn.value || '').toLowerCase();
+          if (text.includes('verify') || text.includes('continue')) {
+            btn.click();
+            return;
+          }
+        }
+      });
+      
+      // 再等待一下
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    } else {
+      console.log('✅ 成功绕过Cloudflare！');
+    }
+    
+    // 获取最终内容
+    const content = await page.content();
+    console.log('页面内容长度:', content.length);
+    
+    // 保存结果
+    await page.screenshot({ path: 'result.png' });
+    console.log('截图已保存: result.png');
+    
+    await browser.close();
+    
+  } catch (error) {
+    console.error('错误:', error.message);
+    await browser.close();
   }
-
-  // 获取页面内容
-  const content = await page.content();
-  console.log('页面加载成功', content);
-  
-  // 继续其他操作...
-  await browser.close();
 }
 
-bypassCloudflare().catch(console.error);
+// 安装依赖后运行
+// npm install puppeteer puppeteer-extra puppeteer-extra-plugin-stealth
+bypassCloudflare();
