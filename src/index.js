@@ -131,103 +131,122 @@ class CloudflareBypasser {
   async getDownloadLink(url) {
     console.log(`获取下载链接，访问: ${url}`);
 
-    // 1. 首先访问预览页面
-    await this.fetchWithBypass(url);
+    try {
+      // 1. 访问文章页面
+      await this.fetchWithBypass(url);
 
-    // 2. 从预览页面获取下载页面的链接
-    const downloadPageUrl = await this.page.evaluate(() => {
-      // 查找所有可能的下载链接
-      const linkSelectors = [
-        // 精确匹配你提供的HTML结构
-        '.fileviewer-actions a[href*="easyupload.us"][target="_blank"]',
-        'a.fileviewer-action[href*="easyupload.us"]',
-        '.fileviewer-action[href*="easyupload.us"]',
-        'a[href*="easyupload.us"][target="_blank"]',
-        'a[href*="easyupload.us/file"]',
-        // 通用选择器
-        'a[href*="download"]',
-        '.download-button a',
-        'a[href*="easyupload"]'
-      ];
+      // 2. 从文章页面获取预览页面链接
+      const previewPageUrl = await this.page.evaluate(() => {
+        // 查找下载按钮（指向预览页面）
+        const downloadButtons = document.querySelectorAll('a[href*="easyupload.us"]');
+        for (const button of downloadButtons) {
+          const text = button.textContent.toLowerCase();
+          const hasDownloadText = text.includes('download') || text.includes('get') || text.includes('pdf');
+          const hasDownloadIcon = button.querySelector('i.fa-download') || button.querySelector('[class*="download"]');
 
-      for (const selector of linkSelectors) {
-        const elements = document.querySelectorAll(selector);
-        for (const element of elements) {
-          // 检查是否包含下载图标或文本
-          const hasDownloadIcon = element.querySelector('i.fa-download');
-          const hasDownloadText = element.textContent.toLowerCase().includes('download');
-          const hasHref = element.href && element.href.includes('easyupload.us');
+          if (hasDownloadText || hasDownloadIcon) {
+            return button.href;
+          }
+        }
+        return null;
+      });
 
-          if (hasHref && (hasDownloadIcon || hasDownloadText)) {
-            console.log(`找到下载页面链接: ${element.href}`);
+      if (!previewPageUrl) {
+        console.log('未找到预览页面链接');
+        return null;
+      }
+
+      console.log(`预览页面: ${previewPageUrl}`);
+
+      // 3. 访问预览页面
+      await this.fetchWithBypass(previewPageUrl);
+
+      // 4. 在预览页面中找到实际的下载按钮
+      const downloadPageUrl = await this.page.evaluate(() => {
+        // 尝试多个选择器查找下载按钮
+        const selectors = [
+          '.fileviewer-actions a[target="_blank"]',
+          'a.fileviewer-action[href*="easyupload.us"]',
+          '.download-link[href*="easyupload.us"]',
+          'a[href*="easyupload.us"][target="_blank"]'
+        ];
+
+        for (const selector of selectors) {
+          const element = document.querySelector(selector);
+          if (element && element.href) {
+            // 检查是否是下载按钮（不是分享按钮）
+            const text = element.textContent.toLowerCase();
+            const hasDownloadIcon = element.querySelector('i.fa-download');
+            if (text.includes('download') || hasDownloadIcon) {
+              return element.href;
+            }
+          }
+        }
+
+        // 如果没有找到，尝试查找所有easyupload链接
+        const allLinks = document.querySelectorAll('a[href*="easyupload.us"]');
+        for (const link of allLinks) {
+          if (link.href !== window.location.href && !link.href.includes('/preview')) {
+            return link.href;
+          }
+        }
+
+        return null;
+      });
+
+      if (!downloadPageUrl) {
+        console.log('在预览页面中未找到下载页面链接');
+        // 截屏查看页面状态
+        await this.page.screenshot({ path: 'preview-page.png' });
+        return null;
+      }
+
+      console.log(`下载页面: ${downloadPageUrl}`);
+
+      // 5. 访问下载页面获取PDF链接
+      await this.fetchWithBypass(downloadPageUrl);
+
+      // 6. 获取PDF链接
+      const pdfLink = await this.page.evaluate(() => {
+        // 查找PDF下载链接
+        const pdfSelectors = [
+          '.filebox-download a.download-link',
+          '.download-box a[href*=".pdf"]',
+          'a[href*=".pdf"][class*="download"]',
+          'a[href*=".pdf"]'
+        ];
+
+        for (const selector of pdfSelectors) {
+          const element = document.querySelector(selector);
+          if (element && element.href && element.href.includes('.pdf')) {
             return element.href;
           }
         }
-      }
 
-      // 如果没有精确匹配，尝试查找任何easyupload链接
-      const allLinks = document.querySelectorAll('a[href*="easyupload.us"]');
-      for (const link of allLinks) {
-        if (link.href.includes('/file')) {
-          console.log(`找到备选下载页面链接: ${link.href}`);
-          return link.href;
+        // 如果没有找到，查找包含download文本的PDF链接
+        const allLinks = document.querySelectorAll('a[href*=".pdf"]');
+        for (const link of allLinks) {
+          const text = link.textContent.toLowerCase();
+          if (text.includes('download') || text.includes('pdf')) {
+            return link.href;
+          }
         }
+
+        return null;
+      });
+
+      if (pdfLink) {
+        console.log(`PDF链接: ${pdfLink}`);
+        return pdfLink;
+      } else {
+        console.log('在下载页面中未找到PDF链接');
+        // 截屏查看页面状态
+        await this.page.screenshot({ path: 'download-page.png' });
+        return null;
       }
 
-      return null;
-    });
-
-    if (!downloadPageUrl) {
-      console.log('未找到下载页面链接');
-      return null;
-    }
-
-    console.log(`下载页面链接: ${downloadPageUrl}`);
-
-    // 3. 访问下载页面获取PDF链接
-    await this.fetchWithBypass(downloadPageUrl);
-
-    // 4. 从下载页面获取PDF链接
-    const pdfLink = await this.page.evaluate(() => {
-      // 查找PDF下载链接
-      const pdfSelectors = [
-        // 精确匹配下载页面的HTML结构
-        '.filebox-download a.download-link[href*=".pdf"]',
-        '.filebox-download a[href*=".pdf"]',
-        '.download-link[href*=".pdf"]',
-        'a[href*=".pdf"]',
-        '.download-box a[href]',
-        '[class*="download"] a[href*=".pdf"]'
-      ];
-
-      for (const selector of pdfSelectors) {
-        const element = document.querySelector(selector);
-        if (element && element.href && element.href.includes('.pdf')) {
-          console.log(`找到PDF链接: ${element.href}`);
-          return element.href;
-        }
-      }
-
-      // 尝试查找包含"download"文本的链接
-      const downloadElements = document.querySelectorAll('a');
-      for (const element of downloadElements) {
-        const text = element.textContent.toLowerCase();
-        const href = element.href;
-
-        if (href && href.includes('.pdf') && (text.includes('download') || text.includes('pdf'))) {
-          console.log(`通过文本找到PDF链接: ${href}`);
-          return href;
-        }
-      }
-
-      return null;
-    });
-
-    if (pdfLink) {
-      console.log(`最终PDF链接: ${pdfLink}`);
-      return pdfLink;
-    } else {
-      console.log('未找到PDF链接');
+    } catch (error) {
+      console.error(`获取下载链接过程中出错: ${error.message}`);
       return null;
     }
   }
