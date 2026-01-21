@@ -6,14 +6,15 @@ puppeteer.use(StealthPlugin());
 
 async function bypassCloudflare() {
   const browser = await puppeteer.launch({
-    headless: false, // 建议先用非无头模式测试
+    headless: 'new', // 或 true，'new' 是新版本的无头模式
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--disable-web-security',
-      '--disable-features=IsolateOrigins,site-per-process',
-      '--disable-blink-features=AutomationControlled',
-      '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu',
+      '--window-size=1920,1080',
+      '--single-process', // 在某些环境中可能需要
     ]
   });
 
